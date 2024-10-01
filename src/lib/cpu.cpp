@@ -1,5 +1,7 @@
 #include "../include/cpu.hpp"
 #include <cstdint>
+#include <cstdlib>
+#include <time.h>
 
 using namespace chip8;
 /*
@@ -20,6 +22,7 @@ CPU::CPU(Memory *memoryPtr, Display *displayPtr) {
   delayTimer = 0;
   soundTimer = 0;
   memset(V, 0, sizeof(uint8_t) * REGISTER_SIZE);
+  srand(time(NULL));
 }
 
 void CPU::tick() {}
@@ -73,6 +76,10 @@ void CPU::executeInstruction() {
     break;
   case 0xB000:
     PC = nnn + V[0x0];
+    break;
+  case 0xC000:
+    uint8_t numberRandom = rand() % 256;
+    V[vx] = numberRandom & kk;
     break;
   }
 }
