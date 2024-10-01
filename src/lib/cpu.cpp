@@ -68,6 +68,9 @@ void CPU::executeInstruction() {
     if (V[vx] != V[vy])
       incrementePC();
     break;
+  case 0xA000:
+    I = nnn;
+    break;
   }
 }
 void CPU::instructionZero(uint16_t opcode) {
