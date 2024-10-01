@@ -2,6 +2,14 @@
 #include <cstdint>
 
 using namespace chip8;
+/*
+ * COLA
+ * nnn or addr - A 12-bit value, the lowest 12 bits of the instruction
+ * n or nibble - A 4-bit value, the lowest 4 bits of the instruction
+ * x - A 4-bit value, the lower 4 bits of the high byte of the instruction
+ * y - A 4-bit value, the upper 4 bits of the low byte of the instruction
+ * kk or byte - An 8-bit value, the lowest 8 bits of the instruction
+ * */
 
 CPU::CPU(Memory *memoryPtr, Display *displayPtr) {
   memory = memoryPtr;
@@ -53,6 +61,9 @@ void CPU::executeInstruction() {
   case 0x7000:
     V[vx] += kk;
     break;
+  case 0x8000:
+    instructionEight(opcode);
+    break;
   }
 }
 void CPU::instructionZero(uint16_t opcode) {
@@ -66,7 +77,47 @@ void CPU::instructionZero(uint16_t opcode) {
     break;
   }
 }
-void CPU::instructionEight(uint16_t) {}
+void CPU::instructionEight(uint16_t opcode) {
+  uint8_t vx = (opcode | 0x0F00) >> 8;
+  uint8_t vy = (opcode | 0x00F0) >> 4;
+  switch (opcode | 0x000F) {
+  case 0x0000:
+    V[vx] = V[vy];
+    break;
+  case 0x0001:
+    V[vx] |= V[vy];
+    break;
+  case 0x0002:
+    V[vx] &= V[vy];
+    break;
+  case 0x0003:
+    V[vx] ^= V[vy];
+    break;
+  case 0x0004: {
+    uint16_t sumVxVy = V[vx] + V[vy];
+    V[0xF] = (sumVxVy > 0xFF) ? 1 : 0;
+    V[vx] = sumVxVy | 0x00FF;
+    break;
+  }
+  case 0x0005:
+    V[0xF] = (V[vx] > V[vy]) ? 1 : 0;
+    V[vx] -= V[vy];
+    break;
+  case 0x0006:
+    V[0xF] = ((V[vx] | 0x0F) == 1) ? 1 : 0;
+    V[vx] = V[vx] >> 1;
+    break;
+  case 0x0007:
+    V[0xF] = (V[vy] > V[vx]) ? 1 : 0;
+    V[vy] -= V[vx];
+    break;
+  case 0x000E:
+    V[0xF] = (((V[vx] | 0xF0) >> 1) == 1) ? 1 : 0;
+    V[vx] = V[vx] << 1;
+    break;
+  }
+}
+
 void CPU::instructionF(uint16_t) {}
 
 void CPU::incrementePC() { PC += 2; }
