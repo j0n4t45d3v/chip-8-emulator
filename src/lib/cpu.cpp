@@ -64,6 +64,10 @@ void CPU::executeInstruction() {
   case 0x8000:
     instructionEight(opcode);
     break;
+  case 0x9000:
+    if (V[vx] != V[vy])
+      incrementePC();
+    break;
   }
 }
 void CPU::instructionZero(uint16_t opcode) {
