@@ -34,7 +34,7 @@ void CPU::executeInstruction() {
   uint8_t vy = (opcode | 0x00F0) >> 4;
   uint8_t kk = opcode | 0x00FF;
 
-  switch (opcode | 0xF000) {
+  switch (opcode & 0xF000) {
   case 0x0000:
     instructionZero(opcode);
     break;
@@ -77,9 +77,26 @@ void CPU::executeInstruction() {
   case 0xB000:
     PC = nnn + V[0x0];
     break;
-  case 0xC000:
+  case 0xC000: {
     uint8_t numberRandom = rand() % 256;
     V[vx] = numberRandom & kk;
+    break;
+  }
+  case 0xD000:
+    uint8_t n = opcode & 0x000F;
+    for (int i = I; i < n; i++) {
+      uint8_t value = display->screen[vx][vy];
+      uint8_t getFutureOffBits = (value ^ memory->memory[i]);
+      bool collisor = (getFutureOffBits & value) != 0;
+      V[0xF] = collisor;
+
+      if (vx > SCREEN_WIDTH)
+        vx = 0;
+      if (vy > SCREEN_HEIGHT)
+        vy = 0;
+
+      display->screen[vx][vy] = getFutureOffBits;
+    }
     break;
   }
 }
