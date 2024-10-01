@@ -71,6 +71,9 @@ void CPU::executeInstruction() {
   case 0xA000:
     I = nnn;
     break;
+  case 0xB000:
+    PC = nnn + V[0x0];
+    break;
   }
 }
 void CPU::instructionZero(uint16_t opcode) {
