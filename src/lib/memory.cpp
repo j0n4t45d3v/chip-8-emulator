@@ -29,7 +29,12 @@ void Memory::storeRom(FILE *rom, int romSize) {
       << std::endl
       << std::endl;
   int counter = 0;
-  for (uint8_t hex : memory) {
+  for (int i = 0; i < MEMORY_SIZE; i++) {
+    uint8_t hex = memory[i];
+    if (i == 0x200)
+      printf("\n                                  --------------------- START "
+             "PROGRAMA "
+             "-------------------------                                \n");
     printf(" %02x ", hex);
     counter++;
     if (counter >= 32) {
