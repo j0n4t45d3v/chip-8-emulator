@@ -38,7 +38,7 @@ void Chip8::run(chip8::Display *display, chip8::Keypad *keypad) {
     std::cout << "Classe Memory ta vindo nula" << std::endl;
     exit(1);
   }
-  cpu = new chip8::CPU(memory, display);
+  cpu = new chip8::CPU(memory, display, keypad);
   while (running) {
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT || event.key.keysym.sym == SDLK_ESCAPE) {

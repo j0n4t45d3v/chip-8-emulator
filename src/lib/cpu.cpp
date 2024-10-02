@@ -1,5 +1,4 @@
 #include "../include/cpu.hpp"
-#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -15,9 +14,10 @@ using namespace chip8;
  * kk or byte - An 8-bit value, the lowest 8 bits of the instruction
  * */
 
-CPU::CPU(Memory *memoryPtr, Display *displayPtr) {
+CPU::CPU(Memory *memoryPtr, Display *displayPtr, Keypad *keypadPtr) {
   memory = memoryPtr;
   display = displayPtr;
+  keypad = keypadPtr;
   PC = 0x200;
   SP = 0;
   I = 0;
@@ -36,7 +36,8 @@ void CPU::tick() { executeInstruction(); }
 
 void CPU::executeInstruction() {
   uint16_t opcode = memory->memory[PC] << 8 | memory->memory[PC + 1];
-  printf("============= INICIO INSTRUÇÃO ATUAL: %04x ============= \n\n", opcode);
+  printf("============= INICIO INSTRUÇÃO ATUAL: %04x ============= \n\n",
+         opcode);
   uint16_t nnn = (opcode & 0x0FFF);
   uint8_t vx = (opcode & 0x0F00) >> 8;
   uint8_t vy = (opcode & 0x00F0) >> 4;
@@ -136,11 +137,15 @@ void CPU::executeInstruction() {
     incrementePC();
     break;
   }
+  case 0xE000:
+    instructionE(opcode);
+    break;
   default:
     printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
     // incrementePC();
   }
-  printf("\n============= FINAL INSTRUÇÃO ATUAL: %04x ============= \n", opcode);
+  printf("\n============= FINAL INSTRUÇÃO ATUAL: %04x ============= \n",
+         opcode);
 }
 void CPU::instructionZero(uint16_t opcode) {
   switch (opcode) {
@@ -158,9 +163,9 @@ void CPU::instructionZero(uint16_t opcode) {
   }
 }
 void CPU::instructionEight(uint16_t opcode) {
-  uint8_t vx = (opcode | 0x0F00) >> 8;
-  uint8_t vy = (opcode | 0x00F0) >> 4;
-  switch (opcode | 0x000F) {
+  uint8_t vx = (opcode & 0x0F00) >> 8;
+  uint8_t vy = (opcode & 0x00F0) >> 4;
+  switch (opcode & 0x000F) {
   case 0x0000:
     V[vx] = V[vy];
     break;
@@ -194,6 +199,25 @@ void CPU::instructionEight(uint16_t opcode) {
   case 0x000E:
     V[0xF] = (((V[vx] | 0xF0) >> 1) == 1) ? 1 : 0;
     V[vx] = V[vx] << 1;
+    break;
+  }
+}
+
+void CPU::instructionE(uint16_t opcode) {
+  uint8_t vx = (opcode & 0x0F00) >> 8;
+  uint8_t vy = (opcode & 0x00F0) >> 4;
+  switch (opcode & 0x00FF) {
+  case 0x009E:
+    if (keypad->keys[vx] == 1) {
+      printf("A KEY %02x FOI PRECIONADA\n", keypad->keys[vx]);
+      incrementePC();
+    }
+    break;
+  case 0x00A1:
+    if (keypad->keys[vx] == 0) {
+      printf("A KEY %02x FOI DEIXADO DE SER PRECIONADO\n", keypad->keys[vx]);
+      incrementePC();
+    }
     break;
   }
 }

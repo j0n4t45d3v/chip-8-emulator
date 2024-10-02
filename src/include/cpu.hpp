@@ -2,6 +2,7 @@
 #define CPU_HPP
 
 #include "display.hpp"
+#include "keypad.hpp"
 #include "memory.hpp"
 #include <cstdint>
 
@@ -13,6 +14,7 @@ class CPU {
 public:
   Memory *memory;
   Display *display;
+  Keypad *keypad;
 
   uint8_t V[REGISTER_SIZE];
   uint16_t I;
@@ -22,7 +24,7 @@ public:
   uint8_t delayTimer;
   uint8_t soundTimer;
 
-  CPU(Memory *, Display *);
+  CPU(Memory *, Display *, Keypad *);
   ~CPU();
   void tick();
 
@@ -30,6 +32,7 @@ private:
   void executeInstruction();
   void instructionZero(uint16_t);
   void instructionEight(uint16_t);
+  void instructionE(uint16_t);
   void instructionF(uint16_t);
   void incrementePC();
 };
