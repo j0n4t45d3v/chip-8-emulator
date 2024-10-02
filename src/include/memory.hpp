@@ -7,7 +7,7 @@
 
 namespace chip8 {
 
-const int MEMORY_SIZE = 4096;
+const int MEMORY_SIZE = 4095;
 const int STACK_SIZE = 16;
 const int SPRITE_SET_SIZE = 80;
 
@@ -37,6 +37,7 @@ public:
   ~Memory();
 
   void storeRom(FILE *, int);
+
 private:
   void storeSpriteSet();
 };

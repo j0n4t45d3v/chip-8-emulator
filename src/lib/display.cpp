@@ -3,8 +3,10 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 using namespace chip8;
 
@@ -13,10 +15,12 @@ Display::Display() {
   quit = false;
 }
 
+Display::~Display() {}
+
 void Display::render() {
   for (int x = 0; x < SCREEN_HEIGHT; x++) {
     for (int y = 0; y < SCREEN_WIDTH; y++) {
-
+      // printf("PIXEL COM VALOR: %02x\n", screen[x][y]);
       if (screen[x][y] == 1) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // white
       } else {

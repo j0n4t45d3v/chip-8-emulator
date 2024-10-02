@@ -1,5 +1,7 @@
 #include "../include/cpu.hpp"
+#include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <time.h>
 
@@ -25,14 +27,20 @@ CPU::CPU(Memory *memoryPtr, Display *displayPtr) {
   srand(time(NULL));
 }
 
-void CPU::tick() {}
+CPU::~CPU() {
+  delete memory;
+  delete display;
+}
+
+void CPU::tick() { executeInstruction(); }
 
 void CPU::executeInstruction() {
   uint16_t opcode = memory->memory[PC] << 8 | memory->memory[PC + 1];
-  uint16_t nnn = (opcode | 0x0FFF);
-  uint8_t vx = (opcode | 0x0F00) >> 8;
-  uint8_t vy = (opcode | 0x00F0) >> 4;
-  uint8_t kk = opcode | 0x00FF;
+  printf("============= INICIO INSTRUÇÃO ATUAL: %04x ============= \n", opcode);
+  uint16_t nnn = (opcode & 0x0FFF);
+  uint8_t vx = (opcode & 0x0F00) >> 8;
+  uint8_t vy = (opcode & 0x00F0) >> 4;
+  uint8_t kk = opcode & 0x00FF;
 
   switch (opcode & 0xF000) {
   case 0x0000:
@@ -40,29 +48,47 @@ void CPU::executeInstruction() {
     break;
   case 0x1000:
     PC = nnn;
+    printf("PC MOVIDO PARA O ENDEREÇO DE MEMORIA: %04x; PC = %04x\n",
+           memory->memory[PC], PC);
     break;
   case 0x2000:
     SP++;
     memory->stack[SP] = PC;
     PC = nnn;
+    printf("PC MOVIDO PARA O ENDEREÇO DE MEMORIA: %04x; PC = %04x E ADICIONADO "
+           "O VALOR DE PC NA STACK\n",
+           memory->memory[PC], PC);
     break;
   case 0x3000:
-    if (V[vx] == kk)
+    if (V[vx] == kk) {
+      printf("INCREMENTADO O PC %04x", opcode);
       incrementePC();
+    }
+    incrementePC();
     break;
   case 0x4000:
-    if (V[vx] != kk)
+    if (V[vx] != kk) {
+      printf("INCREMENTADO O PC %04x\n", opcode);
       incrementePC();
+    }
+    incrementePC();
     break;
   case 0x5000:
-    if (V[vx] == V[vy])
+    if (V[vx] == V[vy]) {
+      printf("INCREMENTADO O PC %04x\n", opcode);
       incrementePC();
+    }
+    incrementePC();
     break;
   case 0x6000:
     V[vx] = kk;
+    printf("SETADO O VALOR DE V[%02x] PARA %02x\n", vx, kk);
+    incrementePC();
     break;
   case 0x7000:
     V[vx] += kk;
+    printf("ADICONADO O VALOR DE %02x EM V[%02x]\n", kk, vx);
+    incrementePC();
     break;
   case 0x8000:
     instructionEight(opcode);
@@ -70,9 +96,11 @@ void CPU::executeInstruction() {
   case 0x9000:
     if (V[vx] != V[vy])
       incrementePC();
+    incrementePC();
     break;
   case 0xA000:
     I = nnn;
+    incrementePC();
     break;
   case 0xB000:
     PC = nnn + V[0x0];
@@ -80,34 +108,43 @@ void CPU::executeInstruction() {
   case 0xC000: {
     uint8_t numberRandom = rand() % 256;
     V[vx] = numberRandom & kk;
+    incrementePC();
     break;
   }
-  case 0xD000:
+  case 0xD000: {
     uint8_t n = opcode & 0x000F;
-    for (int i = I; i < n; i++) {
-      uint8_t value = display->screen[vx][vy];
-      uint8_t getFutureOffBits = (value ^ memory->memory[i]);
-      bool collisor = (getFutureOffBits & value) != 0;
-      V[0xF] = collisor;
+    for (int i = 0; i < n; i++) {
+      uint8_t byte = memory->memory[I + i];
+      for (int j = 0; j < 8; j++) {
+        uint8_t bit = (byte >> j) & 0x1;
+        uint8_t *pixelPtr = &display->screen[(vx + i) % SCREEN_HEIGHT]
+                                            [(vy + (7 - i)) % SCREEN_WIDTH];
 
-      if (vx > SCREEN_WIDTH)
-        vx = 0;
-      if (vy > SCREEN_HEIGHT)
-        vy = 0;
-
-      display->screen[vx][vy] = getFutureOffBits;
+        V[0xF] = (bit == 1 && *pixelPtr == 1) ? 1 : 0;
+        *pixelPtr ^= bit;
+      }
     }
+    incrementePC();
     break;
   }
+  default:
+    printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
+    // incrementePC();
+  }
+  printf("============= FINAL INSTRUÇÃO ATUAL: %04x ============= \n", opcode);
 }
 void CPU::instructionZero(uint16_t opcode) {
   switch (opcode) {
   case 0x00E0:
     display->clearScreen();
     incrementePC();
+    printf("LIMPOU A TELA\n");
     break;
   case 0x00EE:
     PC = memory->stack[--SP];
+    printf("PC MOVIDO PARA O ENDEREÇO DE MEMORIA: %02x, PC = %02x E SUBTRAIDO "
+           "O VALOR SP; SP = %02x\n",
+           memory->memory[PC], PC, SP);
     break;
   }
 }

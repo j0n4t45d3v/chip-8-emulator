@@ -2,9 +2,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <iterator>
 #include <ostream>
 
 Chip8::Chip8() { memory = new chip8::Memory(); }
@@ -20,6 +22,8 @@ void Chip8::loadRom(char *filename) {
   int romSize = ftell(rom);
   rewind(rom);
 
+  std::cout << "Tamanho da ROM: " << romSize << " bytes " << std::endl;
+
   memory->storeRom(rom, romSize);
   fclose(rom);
 }
@@ -30,15 +34,21 @@ void Chip8::run(chip8::Display *display, chip8::Keypad *keypad) {
   bool running = true;
   SDL_Event event;
 
+  if (memory == nullptr) {
+    std::cout << "Classe Memory ta vindo nula" << std::endl;
+    exit(1);
+  }
+  cpu = new chip8::CPU(memory, display);
   while (running) {
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT || event.key.keysym.sym == SDLK_ESCAPE) {
         running = false;
       }
       keypad->keypressed(event);
+      cpu->tick();
     }
     display->render();
-    std::cout << "Esperando..." << std::endl;
+    // std::cout << "Esperando..." << std::endl;
     // display->wait(5000);
   }
 
