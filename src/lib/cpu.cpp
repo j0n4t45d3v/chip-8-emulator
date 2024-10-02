@@ -140,6 +140,9 @@ void CPU::executeInstruction() {
   case 0xE000:
     instructionE(opcode);
     break;
+  case 0xF000:
+    instructionF(opcode);
+    break;
   default:
     printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
     // incrementePC();
@@ -167,37 +170,52 @@ void CPU::instructionEight(uint16_t opcode) {
   uint8_t vy = (opcode & 0x00F0) >> 4;
   switch (opcode & 0x000F) {
   case 0x0000:
+    printf("COPIANDO V[%x] (%02x) PARA V[%x]\n", vy, V[vy], vx);
     V[vx] = V[vy];
     break;
   case 0x0001:
+    printf("V[%x] (%02x) = V[%x] (%02x) | V[%x] (%02x)\n", vx, V[vx], vx, V[vx],
+           vy, V[vy]);
     V[vx] |= V[vy];
     break;
   case 0x0002:
+    printf("V[%x] (%02x) = V[%x] (%02x) & V[%x] (%02x)\n", vx, V[vx], vx, V[vx],
+           vy, V[vy]);
     V[vx] &= V[vy];
     break;
   case 0x0003:
+    printf("V[%x] (%02x) = V[%x] (%02x) ^ V[%x] (%02x)\n", vx, V[vx], vx, V[vx],
+           vy, V[vy]);
     V[vx] ^= V[vy];
     break;
   case 0x0004: {
     uint16_t sumVxVy = V[vx] + V[vy];
     V[0xF] = (sumVxVy > 0xFF) ? 1 : 0;
-    V[vx] = sumVxVy | 0x00FF;
+    printf("SOMA: V[%x] (%02x) + V[%x] (%02x) = %04x, V[0xF] = %d\n", vx, V[vx],
+           vy, V[vy], sumVxVy, V[0xF]);
+    V[vx] = sumVxVy & 0x00FF;
     break;
   }
   case 0x0005:
+    printf("V[0xF] = %d, V[%x] (%02x) - V[%x] (%02x)\n",
+           (V[vx] > V[vy] ? 1 : 0), vx, V[vx], vy, V[vy]);
     V[0xF] = (V[vx] > V[vy]) ? 1 : 0;
     V[vx] -= V[vy];
     break;
   case 0x0006:
-    V[0xF] = ((V[vx] | 0x0F) == 1) ? 1 : 0;
+    V[0xF] = ((V[vx] & 0x0F) == 1) ? 1 : 0;
+    printf("V[0xF] = %d, V[%x] (%02x) >> 1\n", V[0xF], vx, V[vx]);
     V[vx] = V[vx] >> 1;
     break;
   case 0x0007:
     V[0xF] = (V[vy] > V[vx]) ? 1 : 0;
+    printf("V[0xF] = %d, V[%x] (%02x) - V[%x] (%02x)\n", V[0xF], vy, V[vy], vx,
+           V[vx]);
     V[vy] -= V[vx];
     break;
   case 0x000E:
     V[0xF] = (((V[vx] | 0xF0) >> 1) == 1) ? 1 : 0;
+    printf("V[0xF] = %d, V[%x] (%02x) << 1\n", V[0xF], vx, V[vx]);
     V[vx] = V[vx] << 1;
     break;
   }
@@ -212,16 +230,80 @@ void CPU::instructionE(uint16_t opcode) {
       printf("A KEY %02x FOI PRECIONADA\n", keypad->keys[vx]);
       incrementePC();
     }
+    incrementePC();
     break;
   case 0x00A1:
     if (keypad->keys[vx] == 0) {
       printf("A KEY %02x FOI DEIXADO DE SER PRECIONADO\n", keypad->keys[vx]);
       incrementePC();
     }
+    incrementePC();
     break;
   }
 }
 
-void CPU::instructionF(uint16_t) {}
+void CPU::instructionF(uint16_t opcode) {
+  uint8_t vx = (opcode & 0x0F00) >> 8;
+  uint8_t vy = (opcode & 0x00F0) >> 4;
+
+  switch (opcode & 0x00FF) {
+  case 0x0007:
+    V[vx] = delayTimer;
+    printf("ATRIBUINDO V[%x] = delayTimer (%02x)\n", vx, delayTimer);
+    incrementePC();
+    break;
+  case 0x000A:
+    // TODO: implementation
+    break;
+  case 0x0015:
+    delayTimer = V[vx];
+    printf("ATRIBUINDO delayTimer = V[%x] (%02x)\n", vx, V[vx]);
+    incrementePC();
+    break;
+  case 0x0018:
+    soundTimer = V[vx];
+    printf("ATRIBUINDO soundTimer = V[%x] (%02x)\n", vx, V[vx]);
+    incrementePC();
+    break;
+  case 0x001E:
+    I += V[vx];
+    printf("I += V[%x] (%02x), I = %04x\n", vx, V[vx], I);
+    incrementePC();
+    break;
+  case 0x0029:
+    I = memory->spriteSet[V[vx]];
+    printf("I = memory->spriteSet[V[%x] (%02x)] = %04x\n", vx, V[vx], I);
+    incrementePC();
+    break;
+  case 0x0033: {
+    uint8_t hundreds = V[vx] / 100;
+    uint8_t tens = (V[vx] / 10) % 10;
+    uint8_t units = V[vx] % 10;
+    memory->memory[I] = hundreds;
+    memory->memory[I + 1] = tens;
+    memory->memory[I + 2] = units;
+    printf("ARMAZENANDO EM MEMÓRIA: I[%04x] = %02x, I[%04x] = %02x, I[%04x] = "
+           "%02x\n",
+           I, hundreds, I + 1, tens, I + 2, units);
+    incrementePC();
+    break;
+  }
+  case 0x0055:
+    for (int i = 0; i <= vx; i++) {
+      memory->memory[I + i] = V[i];
+      printf("ARMAZENANDO: memory[%04x] = V[%x] (%02x)\n", I + i, i, V[i]);
+    }
+    incrementePC();
+    break;
+  case 0x0065:
+    for (int i = 0; i <= vx; i++) {
+      V[i] = memory->memory[I + i];
+      printf("CARREGANDO: V[%x] = memory[%04x] (%02x)\n", i, I + i,
+             memory->memory[I + i]);
+    }
+    incrementePC();
+    break;
+  }
+}
 
 void CPU::incrementePC() { PC += 2; }
