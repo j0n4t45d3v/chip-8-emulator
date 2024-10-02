@@ -53,8 +53,7 @@ void CPU::executeInstruction() {
            memory->memory[PC], PC);
     break;
   case 0x2000:
-    SP++;
-    memory->stack[SP] = PC;
+    memory->stack[SP++] = PC;
     PC = nnn;
     printf("PC MOVIDO PARA O ENDEREÇO DE MEMORIA: %04x; PC = %04x E ADICIONADO "
            "O VALOR DE PC NA STACK\n",
@@ -93,8 +92,10 @@ void CPU::executeInstruction() {
     break;
   case 0x8000:
     instructionEight(opcode);
+    incrementePC();
     break;
   case 0x9000:
+    printf("Vx = %02x e Vy = %02x", V[vx], V[vy]);
     if (V[vx] != V[vy]) {
       incrementePC();
       printf("INCREMENTADO PC\n");
@@ -133,6 +134,7 @@ void CPU::executeInstruction() {
         *pixelPtr ^= bit;
       }
     }
+    display->render();
     printf("DESENHA DO OS SPRITES DE %02x ATÉ %02x\n", I, n);
     incrementePC();
     break;
@@ -145,8 +147,12 @@ void CPU::executeInstruction() {
     break;
   default:
     printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
-    // incrementePC();
+    printf("VALOR DO PC = %02x, SP = %02x, I = %02x, x = %02x e y = %02x\n", PC,
+           SP, I, vx, vy);
+    exit(1);
   }
+  printf("VALOR DO PC = %02x, SP = %02x, I = %02x, x = %02x e y = %02x\n", PC,
+         SP, I, vx, vy);
   printf("\n============= FINAL INSTRUÇÃO ATUAL: %04x ============= \n",
          opcode);
 }
@@ -158,11 +164,18 @@ void CPU::instructionZero(uint16_t opcode) {
     printf("LIMPOU A TELA\n");
     break;
   case 0x00EE:
+    for (uint8_t value : memory->stack)
+      printf("VALOR: %02x\n", value);
     PC = memory->stack[--SP];
     printf("PC MOVIDO PARA O ENDEREÇO DE MEMORIA: %02x, PC = %02x E SUBTRAIDO "
            "O VALOR SP; SP = %02x\n",
            memory->memory[PC], PC, SP);
+    incrementePC();
     break;
+  default:
+    printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
+    printf("VALOR DO PC = %02x, SP = %02x, I = %02x", PC, SP, I);
+    exit(1);
   }
 }
 void CPU::instructionEight(uint16_t opcode) {
@@ -203,7 +216,7 @@ void CPU::instructionEight(uint16_t opcode) {
     V[vx] -= V[vy];
     break;
   case 0x0006:
-    V[0xF] = ((V[vx] & 0x0F) == 1) ? 1 : 0;
+    V[0xF] = ((V[vx] & 0x01) == 1);
     printf("V[0xF] = %d, V[%x] (%02x) >> 1\n", V[0xF], vx, V[vx]);
     V[vx] = V[vx] >> 1;
     break;
@@ -214,10 +227,14 @@ void CPU::instructionEight(uint16_t opcode) {
     V[vy] -= V[vx];
     break;
   case 0x000E:
-    V[0xF] = (((V[vx] | 0xF0) >> 1) == 1) ? 1 : 0;
+    V[0xF] = (V[vx] & 0x80) >> 7;
     printf("V[0xF] = %d, V[%x] (%02x) << 1\n", V[0xF], vx, V[vx]);
     V[vx] = V[vx] << 1;
     break;
+  default:
+    printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
+    printf("VALOR DO PC = %02x, SP = %02x, I = %02x", PC, SP, I);
+    exit(1);
   }
 }
 
@@ -239,6 +256,10 @@ void CPU::instructionE(uint16_t opcode) {
     }
     incrementePC();
     break;
+  default:
+    printf("VALOR DO PC = %02x, SP = %02x, I = %02x", PC, SP, I);
+    printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
+    exit(1);
   }
 }
 
@@ -253,7 +274,16 @@ void CPU::instructionF(uint16_t opcode) {
     incrementePC();
     break;
   case 0x000A:
-    // TODO: implementation
+    while (true) {
+      for (int i = 0; i < KEYPAD_SIZE; i++) {
+        uint8_t pressed = keypad->keys[i];
+        if (pressed == 1) {
+          V[vx] = i;
+          break;
+        }
+      }
+    }
+    incrementePC();
     break;
   case 0x0015:
     delayTimer = V[vx];
@@ -303,6 +333,11 @@ void CPU::instructionF(uint16_t opcode) {
     }
     incrementePC();
     break;
+  default:
+    printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
+    printf("VALOR DO PC = %02x, SP = %02x, I = %02x, x = %02x e y = %02x", PC,
+           SP, I, vx, vy);
+    exit(1);
   }
 }
 

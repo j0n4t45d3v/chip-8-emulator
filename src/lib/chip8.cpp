@@ -2,11 +2,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
-#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include <iterator>
 #include <ostream>
 
 Chip8::Chip8() { memory = new chip8::Memory(); }
@@ -47,7 +45,7 @@ void Chip8::run(chip8::Display *display, chip8::Keypad *keypad) {
       keypad->keypressed(event);
       cpu->tick();
     }
-    display->render();
+    // display->render();
     // std::cout << "Esperando..." << std::endl;
     // display->wait(5000);
   }
