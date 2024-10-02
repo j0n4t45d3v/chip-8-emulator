@@ -36,7 +36,7 @@ void CPU::tick() { executeInstruction(); }
 
 void CPU::executeInstruction() {
   uint16_t opcode = memory->memory[PC] << 8 | memory->memory[PC + 1];
-  printf("============= INICIO INSTRUÇÃO ATUAL: %04x ============= \n", opcode);
+  printf("============= INICIO INSTRUÇÃO ATUAL: %04x ============= \n\n", opcode);
   uint16_t nnn = (opcode & 0x0FFF);
   uint8_t vx = (opcode & 0x0F00) >> 8;
   uint8_t vy = (opcode & 0x00F0) >> 4;
@@ -94,20 +94,28 @@ void CPU::executeInstruction() {
     instructionEight(opcode);
     break;
   case 0x9000:
-    if (V[vx] != V[vy])
+    if (V[vx] != V[vy]) {
       incrementePC();
+      printf("INCREMENTADO PC\n");
+    }
     incrementePC();
     break;
   case 0xA000:
     I = nnn;
+    printf("SETA O VALOR DO REGISTRADOR I PRA %04x\n", nnn);
     incrementePC();
     break;
   case 0xB000:
     PC = nnn + V[0x0];
+    printf("SETA O VALOR DO PC PRA %04x SOMANDO O VALOR nnn = %04x EO "
+           "REGISTRADOR V0 = %02x\n",
+           PC, nnn, V[0x0]);
     break;
   case 0xC000: {
     uint8_t numberRandom = rand() % 256;
     V[vx] = numberRandom & kk;
+    printf("SETA O VALOR DE V[%02x] PRA O AND BITWISE DE %02x E %02x\n", vx, kk,
+           numberRandom);
     incrementePC();
     break;
   }
@@ -124,6 +132,7 @@ void CPU::executeInstruction() {
         *pixelPtr ^= bit;
       }
     }
+    printf("DESENHA DO OS SPRITES DE %02x ATÉ %02x\n", I, n);
     incrementePC();
     break;
   }
@@ -131,7 +140,7 @@ void CPU::executeInstruction() {
     printf("INSTRUÇÃO: %04x; NÃO É UMA INSTRUÇÃO VALIDA\n", opcode);
     // incrementePC();
   }
-  printf("============= FINAL INSTRUÇÃO ATUAL: %04x ============= \n", opcode);
+  printf("\n============= FINAL INSTRUÇÃO ATUAL: %04x ============= \n", opcode);
 }
 void CPU::instructionZero(uint16_t opcode) {
   switch (opcode) {

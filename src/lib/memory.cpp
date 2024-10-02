@@ -24,8 +24,8 @@ void Memory::storeRom(FILE *rom, int romSize) {
   size_t bytesRead = fread(&memory[0x200], sizeof(uint8_t), romSize, rom);
 
   std::cout
-      << " ========================================================= MEMORIA "
-         "ALOCADA ===================================================="
+      << " ==================================================== MEMORIA "
+         "ALOCADA ========================================================="
       << std::endl
       << std::endl;
   int counter = 0;
@@ -39,8 +39,8 @@ void Memory::storeRom(FILE *rom, int romSize) {
   }
   std::cout
       << std::endl
-      << " ========================================================= MEMORIA "
-         "ALOCADA ===================================================="
+      << " ==================================================== MEMORIA "
+         "ALOCADA ========================================================="
       << std::endl;
   if (bytesRead != romSize) {
     std::cout << "Erro ao carregar a ROM. Bytes lidos: " << bytesRead << " de "
