@@ -32,7 +32,13 @@ CPU::~CPU() {
   delete display;
 }
 
-void CPU::tick() { executeInstruction(); }
+void CPU::tick() {
+  executeInstruction();
+  if (delayTimer > 0)
+    delayTimer--;
+  if (soundTimer > 0)
+    soundTimer--;
+}
 
 void CPU::executeInstruction() {
   uint16_t opcode = memory->memory[PC] << 8 | memory->memory[PC + 1];
@@ -86,6 +92,7 @@ void CPU::executeInstruction() {
     incrementePC();
     break;
   case 0x7000:
+    printf("V[%02x] = %02x\n", vx, V[vx]);
     V[vx] += kk;
     printf("ADICONADO O VALOR DE %02x EM V[%02x]\n", kk, vx);
     incrementePC();
@@ -123,15 +130,21 @@ void CPU::executeInstruction() {
   }
   case 0xD000: {
     uint8_t n = opcode & 0x000F;
+    V[0xF] = 0;
     for (int i = 0; i < n; i++) {
       uint8_t byte = memory->memory[I + i];
       for (int j = 0; j < 8; j++) {
-        uint8_t bit = (byte >> j) & 0x1;
-        uint8_t *pixelPtr = &display->screen[(vx + i) % SCREEN_HEIGHT]
-                                            [(vy + (7 - i)) % SCREEN_WIDTH];
+        uint8_t bit = (byte >> (7 - j)) & 0x1;
+        uint8_t *pixelPtr =
+            &display->screen[(vx + j) % SCREEN_HEIGHT][(vy + i) % SCREEN_WIDTH];
 
-        V[0xF] = (bit == 1 && *pixelPtr == 1) ? 1 : 0;
+        if (bit == 1 && *pixelPtr == 1) {
+          V[0xF] = 1;
+        }
+        printf("O PIXEL %02x FOI SETADO XOR %02x; %02x ^ %02x = %02x\n",
+               *pixelPtr, bit, *pixelPtr, bit, *pixelPtr ^ bit);
         *pixelPtr ^= bit;
+        printf("VALOR REAL SETADO = %02x\n", *pixelPtr);
       }
     }
     display->render();
@@ -151,8 +164,9 @@ void CPU::executeInstruction() {
            SP, I, vx, vy);
     exit(1);
   }
-  printf("VALOR DO PC = %02x, SP = %02x, I = %02x, x = %02x e y = %02x\n", PC,
-         SP, I, vx, vy);
+  printf("VALOR DO PC = %04x, SP = %02x, I = %04x, x = %02x, y = %02x e kk = "
+         "%02x\n",
+         PC, SP, I, vx, vy, kk);
   printf("\n============= FINAL INSTRUÇÃO ATUAL: %04x ============= \n",
          opcode);
 }
@@ -312,9 +326,10 @@ void CPU::instructionF(uint16_t opcode) {
     memory->memory[I] = hundreds;
     memory->memory[I + 1] = tens;
     memory->memory[I + 2] = units;
-    printf("ARMAZENANDO EM MEMÓRIA: I[%04x] = %02x, I[%04x] = %02x, I[%04x] = "
+    printf("ARMAZENANDO EM MEMÓRIA O VALOR %02x: I[%04x] = %02x, I[%04x] = "
+           "%02x, I[%04x] = "
            "%02x\n",
-           I, hundreds, I + 1, tens, I + 2, units);
+           V[vx], I, hundreds, I + 1, tens, I + 2, units);
     incrementePC();
     break;
   }
