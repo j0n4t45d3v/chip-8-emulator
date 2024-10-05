@@ -43,9 +43,9 @@ void Chip8::run(chip8::Display *display, chip8::Keypad *keypad) {
         running = false;
       }
       keypad->keypressed(event);
-      cpu->tick();
     }
-    // display->render();
+    cpu->tick();
+    display->render();
     // std::cout << "Esperando..." << std::endl;
     // display->wait(5000);
   }

@@ -132,22 +132,19 @@ void CPU::executeInstruction() {
     uint8_t n = opcode & 0x000F;
     V[0xF] = 0;
     for (int i = 0; i < n; i++) {
-      uint8_t byte = memory->memory[I + i];
+      uint8_t pixel = memory->memory[I + i];
       for (int j = 0; j < 8; j++) {
-        uint8_t bit = (byte >> (7 - j)) & 0x1;
-        uint8_t *pixelPtr =
-            &display->screen[(vx + j) % SCREEN_HEIGHT][(vy + i) % SCREEN_WIDTH];
-
-        if (bit == 1 && *pixelPtr == 1) {
-          V[0xF] = 1;
+        if ((pixel & (0x80 >> j)) != 0) {
+          uint16_t x = (V[vx] + j) % SCREEN_WIDTH;
+          uint16_t y = (V[vy] + i) % SCREEN_HEIGHT;
+          if (display->screen[y][x] == 1) {
+            V[0xF] = 1;
+          }
+          display->screen[y][x] ^= 1;
         }
-        printf("O PIXEL %02x FOI SETADO XOR %02x; %02x ^ %02x = %02x\n",
-               *pixelPtr, bit, *pixelPtr, bit, *pixelPtr ^ bit);
-        *pixelPtr ^= bit;
-        printf("VALOR REAL SETADO = %02x\n", *pixelPtr);
       }
     }
-    display->render();
+    // display->render();
     printf("DESENHA DO OS SPRITES DE %02x ATÉ %02x\n", I, n);
     incrementePC();
     break;

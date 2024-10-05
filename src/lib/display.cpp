@@ -18,10 +18,17 @@ Display::Display() {
 Display::~Display() {}
 
 void Display::render() {
-  for (int x = 0; x < SCREEN_HEIGHT; x++) {
-    for (int y = 0; y < SCREEN_WIDTH; y++) {
+  std::cout << std::endl;
+  for (int i = 0; i < SCREEN_HEIGHT; i++) {
+    for (int j = 0; j < SCREEN_WIDTH; j++) {
+      std::cout << (screen[i][j] ? '1' : '0') << ' '; // Imprime 1 ou 0
+    }
+    std::cout << std::endl; // Nova linha após cada linha da matriz
+  }
+  for (int y = 0; y < SCREEN_HEIGHT; y++) {
+    for (int x = 0; x < SCREEN_WIDTH; x++) {
       // printf("PIXEL COM VALOR: %02x\n", screen[x][y]);
-      if (screen[x][y] == 1) {
+      if (screen[y][x] == 1) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // white
       } else {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // black
